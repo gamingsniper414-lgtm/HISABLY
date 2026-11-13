@@ -1,0 +1,114 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(userId) {
+      return request.auth != null
+        && request.auth.uid == userId
+        && request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+
+    function validCustomer(data) {
+      return data.keys().hasAll([
+          'name', 'phone', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'name', 'phone', 'createdAt', 'updatedAt'
+        ])
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 100
+        && data.phone is string
+        && data.phone.size() <= 30;
+    }
+
+    function customerRequired(type) {
+      return type in [
+        'loan_given',
+        'loan_received',
+        'repayment_received',
+        'repayment_given',
+        'credit_sale',
+        'credit_purchase'
+      ];
+    }
+
+    function validTransaction(userId, data) {
+      return data.keys().hasAll([
+          'type', 'amountPaise', 'date', 'customerId',
+          'category', 'description', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'type', 'amountPaise', 'date', 'customerId',
+          'category', 'description', 'createdAt', 'updatedAt'
+        ])
+        && data.type in [
+          'loan_given',
+          'loan_received',
+          'repayment_received',
+          'repayment_given',
+          'credit_sale',
+          'credit_purchase',
+          'cash_income',
+          'cash_expense'
+        ]
+        && data.amountPaise is int
+        && data.amountPaise > 0
+        && data.amountPaise <= 1000000000000
+        && data.date is string
+        && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && data.category is string
+        && data.category.size() <= 60
+        && data.description is string
+        && data.description.size() <= 500
+        && (
+          data.customerId == null
+          || (
+            data.customerId is string
+            && data.customerId.size() > 0
+            && data.customerId.size() <= 128
+            && data.customerId.matches('^[^/]+$')
+            && exists(
+              /databases/$(database)/documents/users/$(userId)/customers/$(data.customerId)
+            )
+          )
+        )
+        && (!customerRequired(data.type) || data.customerId != null);
+    }
+
+    match /users/{userId}/customers/{customerId} {
+      allow read: if isOwner(userId);
+
+      allow create: if isOwner(userId)
+        && validCustomer(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if isOwner(userId)
+        && validCustomer(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+
+      // Customer deletion will be designed separately to protect
+      // linked transaction history.
+      allow delete: if false;
+    }
+
+    match /users/{userId}/transactions/{transactionId} {
+      allow read: if isOwner(userId);
+
+      allow create: if isOwner(userId)
+        && validTransaction(userId, request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if isOwner(userId)
+        && validTransaction(userId, request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+
+      allow delete: if isOwner(userId);
+    }
+  }
+}
