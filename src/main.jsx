@@ -5,6 +5,7 @@ import {
   Bell,
   BookOpen,
   Database,
+  HandCoins,
   LayoutDashboard,
   LogOut,
   Mail,
@@ -21,6 +22,7 @@ import TransactionsPage from "./pages/TransactionsPage.jsx";
 import ReportsPage from "./pages/ReportsPage.jsx";
 import BackupPage from "./pages/BackupPage.jsx";
 import ReminderPage from "./pages/ReminderPage.jsx";
+import BorrowedPage from "./pages/BorrowedPage.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { subscribeToCustomers } from "./services/customers.js";
 import { subscribeToTransactions } from "./services/transactions.js";
@@ -338,6 +340,7 @@ function AppEntry() {
   const navigation = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "customers", label: "Customers", icon: Users },
+    { id: "borrowed", label: "Borrowed money", icon: HandCoins },
     { id: "transactions", label: "Transactions", icon: BookOpen },
     { id: "reports", label: "Reports", icon: BarChart3 },
     { id: "notifications", label: "Notifications", icon: Bell },
@@ -410,6 +413,7 @@ function AppEntry() {
         <main>
           {page === "dashboard" && <DashboardPage user={user} />}
           {page === "customers" && <CustomersPage user={user} />}
+          {page === "borrowed" && <BorrowedPage user={user} />}
           {page === "transactions" && <TransactionsPage user={user} />}
           {page === "reports" && <ReportsPage user={user} />}
           {page === "notifications" && (
