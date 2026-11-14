@@ -7,6 +7,7 @@ import {
   Database,
   LayoutDashboard,
   LogOut,
+  Mail,
   Moon,
   Sun,
   UserCircle,
@@ -19,6 +20,7 @@ import CustomersPage from "./pages/CustomersPage.jsx";
 import TransactionsPage from "./pages/TransactionsPage.jsx";
 import ReportsPage from "./pages/ReportsPage.jsx";
 import BackupPage from "./pages/BackupPage.jsx";
+import ReminderPage from "./pages/ReminderPage.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { subscribeToCustomers } from "./services/customers.js";
 import { subscribeToTransactions } from "./services/transactions.js";
@@ -165,6 +167,7 @@ function NotificationsPage({ user, openCustomers }) {
       const names = new Map(
         customers.map((customer) => [customer.id, customer.name])
       );
+
       const balances = new Map();
       const today = todayLocal();
 
@@ -208,6 +211,7 @@ function NotificationsPage({ user, openCustomers }) {
       return { items, error: "" };
     } catch (err) {
       console.error("Notification calculation error:", err);
+
       return {
         items: [],
         error: "Could not calculate balances. Check your transaction records.",
@@ -248,7 +252,10 @@ function NotificationsPage({ user, openCustomers }) {
       )}
 
       {loading ? (
-        <p role="status" className="mt-6 text-sm text-slate-500 dark:text-slate-400">
+        <p
+          role="status"
+          className="mt-6 text-sm text-slate-500 dark:text-slate-400"
+        >
           Loading balances...
         </p>
       ) : (
@@ -334,6 +341,7 @@ function AppEntry() {
     { id: "transactions", label: "Transactions", icon: BookOpen },
     { id: "reports", label: "Reports", icon: BarChart3 },
     { id: "notifications", label: "Notifications", icon: Bell },
+    { id: "reminder", label: "Email reminder", icon: Mail },
     { id: "backup", label: "Data backup", icon: Database },
     { id: "profile", label: "Profile", icon: UserCircle },
   ];
@@ -400,9 +408,7 @@ function AppEntry() {
         )}
 
         <main>
-          {page === "dashboard" && (
-            <DashboardPage user={user} onLogout={handleLogout} busy={busy} />
-          )}
+          {page === "dashboard" && <DashboardPage user={user} />}
           {page === "customers" && <CustomersPage user={user} />}
           {page === "transactions" && <TransactionsPage user={user} />}
           {page === "reports" && <ReportsPage user={user} />}
@@ -412,6 +418,7 @@ function AppEntry() {
               openCustomers={() => setPage("customers")}
             />
           )}
+          {page === "reminder" && <ReminderPage user={user} />}
           {page === "backup" && <BackupPage user={user} />}
           {page === "profile" && <ProfilePage user={user} />}
         </main>
